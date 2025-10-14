@@ -218,6 +218,7 @@ export interface TechnicalFilters {
   price_above_ma?: MovingAverageFilter;
   ma_alignment?: MovingAverageAlignment;
   ma_deviation?: MADeviationFilter;
+  perfect_order_bullish?: boolean;
   adr_20?: RangeFilter;
   price_contraction?: PriceContraction;
   gap?: GapFilter;
