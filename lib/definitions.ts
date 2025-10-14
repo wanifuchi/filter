@@ -347,12 +347,13 @@ export const PRESET_STRATEGIES: PresetStrategy[] = [
   {
     id: 'top_10_recommended',
     name: '総合評価おすすめベスト10',
-    description: 'テクニカル分析の全要素を総合的に評価し、最もバランスの取れた優良銘柄トップ10を選出',
+    description: '上昇トレンドが確認され、買いシグナルが出ている優良銘柄トップ10を選出',
     filters: {
       technical: {
         price_above_ma: { ma_200: true },
+        perfect_order_bullish: true,
         adr_20: { min: 2, max: 100 },
-        rsi_14: { min: 30, max: 70 },
+        rsi_14: { min: 30, max: 55 },
         volume: {
           dollar_volume_min: 50_000_000,
         },
