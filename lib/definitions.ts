@@ -352,9 +352,8 @@ export const PRESET_STRATEGIES: PresetStrategy[] = [
     filters: {
       technical: {
         price_above_ma: { ma_200: true },
-        perfect_order_bullish: true,
         adr_20: { min: 2, max: 100 },
-        rsi_14: { min: 30, max: 55 },
+        rsi_14: { min: 30, max: 60 },
         volume: {
           dollar_volume_min: 50_000_000,
         },
@@ -365,21 +364,19 @@ export const PRESET_STRATEGIES: PresetStrategy[] = [
   {
     id: 'affordable_buy_stocks',
     name: '手頃な価格のBUY銘柄',
-    description: '100万円で100株購入可能（1株$67以下）で、上昇トレンドとBUYシグナルが確認された買いやすい銘柄',
+    description: '100万円で100株購入可能（1株$100以下）で、適度な値動きと流動性のある買いやすい銘柄',
     filters: {
       technical: {
-        price_above_ma: { ma_200: true },
-        perfect_order_bullish: true,
         adr_20: { min: 2, max: 100 },
-        rsi_14: { min: 30, max: 55 },
+        rsi_14: { min: 25, max: 70 },
         volume: {
-          dollar_volume_min: 20_000_000,
+          dollar_volume_min: 10_000_000,
         },
       },
       fundamental: {
         price_range: {
           min: 5,
-          max: 67,
+          max: 100,
         },
       },
     },
