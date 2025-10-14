@@ -210,6 +210,13 @@ function applyFilters(stock: any, filters: ScreeningFilters): boolean {
       }
     }
 
+    // パーフェクトオーダー（真偽値フィルター）
+    if (technical.perfect_order_bullish === true) {
+      if (!stock.technical_indicators.perfect_order_bullish) {
+        return false;
+      }
+    }
+
     // RSIフィルター
     if (technical.rsi_14) {
       const rsi = stock.technical_indicators.rsi_14;
@@ -235,6 +242,17 @@ function applyFilters(stock: any, filters: ScreeningFilters): boolean {
 
   // ファンダメンタルフィルター
   if (fundamental) {
+    // 価格範囲フィルター
+    if (fundamental.price_range) {
+      const price = stock.current_price;
+      if (fundamental.price_range.min !== undefined && price < fundamental.price_range.min) {
+        return false;
+      }
+      if (fundamental.price_range.max !== undefined && price > fundamental.price_range.max) {
+        return false;
+      }
+    }
+
     // セクターフィルター
     if (fundamental.sectors && fundamental.sectors.length > 0) {
       if (!fundamental.sectors.includes(stock.sector)) {
