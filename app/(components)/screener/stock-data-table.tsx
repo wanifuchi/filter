@@ -82,16 +82,16 @@ export function StockDataTable({ stocks, onSelectStock, onSymbolClick }: StockDa
             <TableHead className="text-right">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="cursor-help border-b border-dotted">総合評価スコア</span>
+                  <span className="cursor-help border-b border-dotted">AIスコア</span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="font-semibold">銘柄の総合的な魅力度（0-100点）</p>
+                  <p className="font-semibold">AI予測スコア（0-100点）</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    200MA・パーフェクトオーダー・RSI・ADR・出来高を<br />
-                    総合的に評価したスコア。スクリーニング結果の並び替えに使用
+                    Gemini AIが今後の上昇可能性を予測したスコア<br />
+                    テクニカル指標・トレンド・市場環境を総合的に分析
                   </p>
-                  <p className="text-xs text-yellow-600 mt-2">
-                    ※ 買いシグナル強度とは別の指標です
+                  <p className="text-xs text-green-600 mt-2">
+                    80点以上: 強い上昇期待 / 60-79点: 上昇期待 / 40-59点: 様子見
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -129,8 +129,8 @@ export function StockDataTable({ stocks, onSelectStock, onSymbolClick }: StockDa
               {stock.technical_indicators.rsi_14?.toFixed(0) ?? '-'}
             </TableCell>
             <TableCell className="text-right">
-              <span className={`font-semibold ${getScoreColor(stock.score)}`}>
-                {stock.score}
+              <span className={`font-semibold ${getScoreColor(stock.ai_score || 0)}`}>
+                {stock.ai_score || '-'}
               </span>
             </TableCell>
           </TableRow>

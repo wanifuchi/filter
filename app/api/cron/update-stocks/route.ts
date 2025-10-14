@@ -157,6 +157,7 @@ export async function GET(request: NextRequest) {
                 low_price: quote.regularMarketDayLow,
                 volume: currentVolume,
                 dollar_volume: dollarVolume,
+                market_cap: quote.marketCap || null,
                 ma_10: ma10,
                 ma_20: ma20,
                 ma_50: ma50,

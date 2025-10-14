@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
         adr_20,
         volume_avg_20,
         perfect_order_bullish,
+        market_cap,
         ai_score,
         ai_confidence,
         ai_prediction,
@@ -160,6 +161,7 @@ export async function POST(request: NextRequest) {
         current_price: stock.current_price,
         volume: stock.volume,
         dollar_volume: stock.dollar_volume,
+        market_cap: stock.market_cap,
         technical_indicators: {
           ma_10: stock.ma_10,
           ma_20: stock.ma_20,
