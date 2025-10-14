@@ -1,0 +1,118 @@
+// Prisma Schema for US Stock Screener
+// Database: Vercel Postgres (256MB free tier)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+// 銘柄マスタテーブル
+model Stock {
+  symbol        String   @id @db.VarChar(10)
+  name          String   @db.VarChar(255)
+  sector        String?  @db.VarChar(100)
+  industry      String?  @db.VarChar(100)
+  marketCap     BigInt?  @map("market_cap")
+  exchange      String?  @db.VarChar(20)
+  country       String   @default("US") @db.VarChar(2)
+  isActive      Boolean  @default(true) @map("is_active")
+  lastUpdated   DateTime @default(now()) @updatedAt @map("last_updated")
+
+  // リレーション
+  dailyPrices          DailyPrice[]
+  technicalIndicators  TechnicalIndicator[]
+
+  @@index([sector])
+  @@index([marketCap])
+  @@map("stocks")
+}
+
+// 日次株価データ
+model DailyPrice {
+  id             Int      @id @default(autoincrement())
+  symbol         String   @db.VarChar(10)
+  date           DateTime @db.Date
+  open           Decimal  @db.Decimal(12, 4)
+  high           Decimal  @db.Decimal(12, 4)
+  low            Decimal  @db.Decimal(12, 4)
+  close          Decimal  @db.Decimal(12, 4)
+  volume         BigInt
+  adjustedClose  Decimal? @map("adjusted_close") @db.Decimal(12, 4)
+
+  // リレーション
+  stock          Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, date])
+  @@index([symbol, date])
+  @@map("daily_prices")
+}
+
+// テクニカル指標キャッシュ
+model TechnicalIndicator {
+  id                    Int      @id @default(autoincrement())
+  symbol                String   @db.VarChar(10)
+  date                  DateTime @db.Date
+  ma10                  Decimal? @map("ma_10") @db.Decimal(12, 4)
+  ma20                  Decimal? @map("ma_20") @db.Decimal(12, 4)
+  ma50                  Decimal? @map("ma_50") @db.Decimal(12, 4)
+  ma150                 Decimal? @map("ma_150") @db.Decimal(12, 4)
+  ma200                 Decimal? @map("ma_200") @db.Decimal(12, 4)
+  ema10                 Decimal? @map("ema_10") @db.Decimal(12, 4)
+  ema21                 Decimal? @map("ema_21") @db.Decimal(12, 4)
+  rsi14                 Decimal? @map("rsi_14") @db.Decimal(5, 2)
+  adr20                 Decimal? @map("adr_20") @db.Decimal(5, 2)
+  vwap                  Decimal? @map("vwap") @db.Decimal(12, 4)
+  volumeAvg20           BigInt?  @map("volume_avg_20")
+  week52High            Decimal? @map("week_52_high") @db.Decimal(12, 4)
+  week52Low             Decimal? @map("week_52_low") @db.Decimal(12, 4)
+  distanceMa10          Decimal? @map("distance_ma_10") @db.Decimal(6, 2)
+  distanceMa200         Decimal? @map("distance_ma_200") @db.Decimal(6, 2)
+  perfectOrderBullish   Boolean  @default(false) @map("perfect_order_bullish")
+
+  // リレーション
+  stock                 Stock    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, date])
+  @@index([symbol, date])
+  @@map("technical_indicators")
+}
+
+// セクターパフォーマンス
+model SectorPerformance {
+  id                  Int      @id @default(autoincrement())
+  sector              String   @db.VarChar(100)
+  etfSymbol           String   @map("etf_symbol") @db.VarChar(10)
+  date                DateTime @db.Date
+  change1d            Decimal? @map("change_1d") @db.Decimal(6, 2)
+  change1w            Decimal? @map("change_1w") @db.Decimal(6, 2)
+  change1m            Decimal? @map("change_1m") @db.Decimal(6, 2)
+  change3m            Decimal? @map("change_3m") @db.Decimal(6, 2)
+  rank1w              Int?     @map("rank_1w")
+  rank1m              Int?     @map("rank_1m")
+  stocksAbove200maPct Decimal? @map("stocks_above_200ma_pct") @db.Decimal(5, 2)
+
+  @@unique([sector, date])
+  @@index([date])
+  @@map("sector_performance")
+}
+
+// 決算カレンダー
+model EarningsCalendar {
+  id               Int      @id @default(autoincrement())
+  symbol           String   @db.VarChar(10)
+  date             DateTime @db.Date
+  fiscalQuarter    String?  @map("fiscal_quarter") @db.VarChar(10)
+  estimateEps      Decimal? @map("estimate_eps") @db.Decimal(8, 4)
+  actualEps        Decimal? @map("actual_eps") @db.Decimal(8, 4)
+  surprisePercent  Decimal? @map("surprise_percent") @db.Decimal(6, 2)
+  time             String?  @db.VarChar(3) // BMO or AMC
+
+  @@index([date])
+  @@index([symbol])
+  @@map("earnings_calendar")
+}
