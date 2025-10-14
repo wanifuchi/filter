@@ -12,7 +12,7 @@ export interface Stock {
   name: string;
   sector: string;
   industry: string;
-  market_cap: number;
+  market_cap: number | null;
   current_price: number;
   exchange: string;
   country: string;
@@ -158,6 +158,10 @@ export interface StockWithIndicators extends Stock {
   dollar_volume: number;
   investment_decision?: InvestmentDecision;
   detailed_analysis?: DetailedAnalysis;
+  ai_score?: number;
+  ai_confidence?: number;
+  ai_prediction?: string;
+  ai_reasoning?: string;
 }
 
 // ============================================
