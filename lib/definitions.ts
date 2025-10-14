@@ -381,6 +381,26 @@ export const PRESET_STRATEGIES: PresetStrategy[] = [
       },
     },
   },
+  {
+    id: 'penny_stocks',
+    name: '超低価格銘柄（$50以下）',
+    description: '少額資金で購入しやすい$50以下の低価格銘柄。初心者や少額投資に最適',
+    filters: {
+      technical: {
+        adr_20: { min: 2, max: 100 },
+        rsi_14: { min: 25, max: 70 },
+        volume: {
+          dollar_volume_min: 5_000_000,
+        },
+      },
+      fundamental: {
+        price_range: {
+          min: 1,
+          max: 50,
+        },
+      },
+    },
+  },
 ];
 
 // ============================================
