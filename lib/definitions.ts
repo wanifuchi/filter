@@ -242,6 +242,7 @@ export interface FundamentalFilters {
   };
   country?: string[];
   exchange?: string[];
+  investment_decision?: ('BUY' | 'HOLD' | 'SELL')[];
 }
 
 export interface ScreeningFilters {
@@ -362,8 +363,8 @@ export const PRESET_STRATEGIES: PresetStrategy[] = [
     },
   },
   {
-    id: 'affordable_buy_stocks',
-    name: '手頃な価格のBUY銘柄',
+    id: 'affordable_stocks',
+    name: '手頃な価格の投資候補',
     description: '100万円で100株購入可能（1株$100以下）で、適度な値動きと流動性のある買いやすい銘柄',
     filters: {
       technical: {
@@ -382,8 +383,29 @@ export const PRESET_STRATEGIES: PresetStrategy[] = [
     },
   },
   {
-    id: 'penny_stocks',
-    name: '超低価格銘柄（$50以下）',
+    id: 'affordable_buy_stocks',
+    name: '手頃な価格のBUY銘柄',
+    description: '100万円で100株購入可能（1株$100以下）で、買いシグナルまたは保有推奨の銘柄（SELL除外）',
+    filters: {
+      technical: {
+        adr_20: { min: 2, max: 100 },
+        rsi_14: { min: 25, max: 70 },
+        volume: {
+          dollar_volume_min: 10_000_000,
+        },
+      },
+      fundamental: {
+        price_range: {
+          min: 5,
+          max: 100,
+        },
+        investment_decision: ['BUY', 'HOLD'],
+      },
+    },
+  },
+  {
+    id: 'ultra_low_price_stocks',
+    name: '超低価格の投資候補（$50以下）',
     description: '少額資金で購入しやすい$50以下の低価格銘柄。初心者や少額投資に最適',
     filters: {
       technical: {
@@ -398,6 +420,27 @@ export const PRESET_STRATEGIES: PresetStrategy[] = [
           min: 1,
           max: 50,
         },
+      },
+    },
+  },
+  {
+    id: 'ultra_low_price_buy_stocks',
+    name: '超低価格のBUY銘柄（$50以下）',
+    description: '少額資金で購入可能な$50以下で、買いシグナルまたは保有推奨の銘柄（SELL除外）',
+    filters: {
+      technical: {
+        adr_20: { min: 2, max: 100 },
+        rsi_14: { min: 25, max: 70 },
+        volume: {
+          dollar_volume_min: 5_000_000,
+        },
+      },
+      fundamental: {
+        price_range: {
+          min: 1,
+          max: 50,
+        },
+        investment_decision: ['BUY', 'HOLD'],
       },
     },
   },

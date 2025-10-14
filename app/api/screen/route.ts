@@ -7,6 +7,7 @@ import {
   calculateADR,
   checkPerfectOrder,
   calculateScore,
+  calculateInvestmentDecision,
 } from '@/lib/technical-indicators';
 import { ScreeningFilters, StockWithIndicators } from '@/lib/definitions';
 
@@ -268,6 +269,27 @@ function applyFilters(stock: any, filters: ScreeningFilters): boolean {
         return false;
       }
       if (fundamental.market_cap.max !== undefined && marketCap > fundamental.market_cap.max) {
+        return false;
+      }
+    }
+
+    // 投資判断フィルター
+    if (fundamental.investment_decision && fundamental.investment_decision.length > 0) {
+      // 現在の出来高を計算（dollar_volumeから逆算）
+      const currentVolume = stock.dollar_volume / stock.current_price;
+      const avgVolume = stock.technical_indicators.volume_avg_20 || currentVolume;
+
+      const decision = calculateInvestmentDecision(
+        stock.current_price,
+        stock.technical_indicators.ma_200,
+        stock.technical_indicators.perfect_order_bullish,
+        stock.technical_indicators.rsi_14,
+        stock.technical_indicators.adr_20,
+        currentVolume,
+        avgVolume
+      );
+
+      if (!fundamental.investment_decision.includes(decision.action)) {
         return false;
       }
     }
