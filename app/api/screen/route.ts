@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase';
 import { PRESET_STRATEGIES, ScreeningFilters } from '@/lib/definitions';
+import { calculateScore } from '@/lib/technical-indicators';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -140,30 +141,43 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // スコア計算（互換性のため）
-    const results = data.map(stock => ({
-      symbol: stock.symbol,
-      name: '', // stock_dataテーブルにはnameがないため、必要に応じてjoinする
-      current_price: stock.current_price,
-      volume: stock.volume,
-      dollar_volume: stock.dollar_volume,
-      technical_indicators: {
-        ma_10: stock.ma_10,
-        ma_20: stock.ma_20,
-        ma_50: stock.ma_50,
-        ma_200: stock.ma_200,
-        rsi_14: stock.rsi_14,
-        adr_20: stock.adr_20,
-        volume_avg_20: stock.volume_avg_20,
-        perfect_order_bullish: stock.perfect_order_bullish,
-      },
-      ai_score: stock.ai_score,
-      ai_confidence: stock.ai_confidence,
-      ai_prediction: stock.ai_prediction,
-      ai_reasoning: stock.ai_reasoning,
-      investment_decision: stock.investment_decision,
-      score: stock.ai_score || 0, // 互換性のため
-    }));
+    // スコア計算（総合評価スコア）
+    const results = data.map(stock => {
+      // 総合評価スコアを計算（詳細ページと同じロジック）
+      const totalScore = calculateScore(
+        stock.current_price,
+        stock.ma_200,
+        stock.perfect_order_bullish,
+        stock.adr_20,
+        stock.rsi_14,
+        stock.volume,
+        stock.volume_avg_20
+      );
+
+      return {
+        symbol: stock.symbol,
+        name: '', // stock_dataテーブルにはnameがないため、必要に応じてjoinする
+        current_price: stock.current_price,
+        volume: stock.volume,
+        dollar_volume: stock.dollar_volume,
+        technical_indicators: {
+          ma_10: stock.ma_10,
+          ma_20: stock.ma_20,
+          ma_50: stock.ma_50,
+          ma_200: stock.ma_200,
+          rsi_14: stock.rsi_14,
+          adr_20: stock.adr_20,
+          volume_avg_20: stock.volume_avg_20,
+          perfect_order_bullish: stock.perfect_order_bullish,
+        },
+        ai_score: stock.ai_score,
+        ai_confidence: stock.ai_confidence,
+        ai_prediction: stock.ai_prediction,
+        ai_reasoning: stock.ai_reasoning,
+        investment_decision: stock.investment_decision,
+        score: totalScore, // 総合評価スコア（0-100）
+      };
+    });
 
     const executionTime = Date.now() - startTime;
 
