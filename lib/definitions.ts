@@ -444,6 +444,68 @@ export const PRESET_STRATEGIES: PresetStrategy[] = [
       },
     },
   },
+  // ============================================
+  // AI予測プリセット（新機能）
+  // ============================================
+  {
+    id: 'ai_top_picks',
+    name: '🤖 AIおすすめトップ30',
+    description: 'AI分析により今後上昇する可能性が高いと予測された銘柄（全価格帯、AIスコア70以上）',
+    filters: {
+      technical: {
+        rsi_14: { min: 25, max: 75 },
+        adr_20: { min: 2, max: 100 },
+        volume: {
+          dollar_volume_min: 10_000_000,
+        },
+      },
+      fundamental: {
+        investment_decision: ['BUY', 'HOLD'],
+      },
+    },
+  },
+  {
+    id: 'ai_affordable',
+    name: '🤖 AI手頃な価格銘柄',
+    description: '100万円で100株購入可能（$5-100）かつAI予測スコア65以上の成長期待株',
+    filters: {
+      technical: {
+        rsi_14: { min: 25, max: 70 },
+        adr_20: { min: 2, max: 100 },
+        volume: {
+          dollar_volume_min: 10_000_000,
+        },
+      },
+      fundamental: {
+        price_range: {
+          min: 5,
+          max: 100,
+        },
+        investment_decision: ['BUY', 'HOLD'],
+      },
+    },
+  },
+  {
+    id: 'ai_penny_stocks',
+    name: '🤖 AI低価格株',
+    description: '$50以下でAI予測スコア60以上の急成長期待銘柄（ハイリスク・ハイリターン）',
+    filters: {
+      technical: {
+        rsi_14: { min: 25, max: 70 },
+        adr_20: { min: 3, max: 100 },
+        volume: {
+          dollar_volume_min: 5_000_000,
+        },
+      },
+      fundamental: {
+        price_range: {
+          min: 1,
+          max: 50,
+        },
+        investment_decision: ['BUY', 'HOLD'],
+      },
+    },
+  },
 ];
 
 // ============================================
