@@ -1,0 +1,58 @@
+name: Update Stock Data (All 6,000+ Stocks)
+
+on:
+  # 毎日2:00 UTC (米国市場開始前)
+  schedule:
+    - cron: '0 2 * * *'
+
+  # 手動実行も可能
+  workflow_dispatch:
+    inputs:
+      start_index:
+        description: '開始インデックス'
+        required: false
+        default: '0'
+      end_index:
+        description: '終了インデックス（空欄で全銘柄）'
+        required: false
+        default: ''
+      test_mode:
+        description: 'テストモード（10銘柄のみ）'
+        required: false
+        default: 'false'
+
+jobs:
+  update-stocks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300 # 最大5時間
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install axios
+
+      - name: Update all stocks
+        env:
+          VERCEL_API_URL: ${{ secrets.VERCEL_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          START_INDEX: ${{ github.event.inputs.start_index || '0' }}
+          END_INDEX: ${{ github.event.inputs.end_index || '' }}
+          TEST_MODE: ${{ github.event.inputs.test_mode || 'false' }}
+        run: |
+          node scripts/batch-update-stocks.js
+
+      - name: Upload logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-logs
+          path: logs/
+          retention-days: 7

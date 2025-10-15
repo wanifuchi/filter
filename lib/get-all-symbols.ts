@@ -132,22 +132,52 @@ export async function getAllUSStockSymbols(): Promise<StockSymbol[]> {
 }
 
 /**
- * Phase 2実装案: 動的に全銘柄を取得
+ * Phase 2実装: 動的に全銘柄を取得（8,000+銘柄）
  *
- * この関数は将来的に実装予定です。
- * Yahoo Finance Screener APIまたは他のデータソースから
- * 全8000+銘柄を取得します。
+ * データソース:
+ * - NYSE全銘柄（Nasdaq Trader FTP）
+ * - NASDAQ全銘柄（Nasdaq Trader FTP）
+ * - Russell 1000（iShares ETF）
  *
- * 例:
- * - FMP (Financial Modeling Prep) API
- * - Polygon.io API
- * - IEX Cloud API
- * - または独自のWebスクレイピング
+ * 合計: 約8,000-10,000銘柄
  */
 export async function getAllUSStockSymbolsDynamic(): Promise<StockSymbol[]> {
-  // TODO: 本番環境ではこの関数を使用
-  // 現在は未実装
-  throw new Error('動的取得は未実装です。静的リストを使用してください。');
+  const { getNYSESymbols } = await import('./symbol-sources/nyse');
+  const { getNASDAQSymbols } = await import('./symbol-sources/nasdaq');
+  const { getRussell1000Symbols } = await import('./symbol-sources/russell');
+  const { applyStandardFilters } = await import('./symbol-sources/filters');
+
+  console.log('📥 全米国株式銘柄取得開始...');
+
+  // 並列で取得
+  const [nyseSymbols, nasdaqSymbols, russell1000Symbols] = await Promise.all([
+    getNYSESymbols(),
+    getNASDAQSymbols(),
+    getRussell1000Symbols(),
+  ]);
+
+  // すべてを統合
+  const allSymbols = [...nyseSymbols, ...nasdaqSymbols, ...russell1000Symbols];
+
+  console.log(`📊 統合前: ${allSymbols.length}銘柄`);
+
+  // フィルタリング適用
+  const filtered = applyStandardFilters(allSymbols, {
+    removeETFs: true,
+    removeADRs: false, // ADRも含める（多様性のため）
+    removePreferredStocks: true,
+    minMarketCap: undefined, // 時価総額フィルターなし（すべて含める）
+  });
+
+  console.log(`✅ フィルタリング後: ${filtered.length}銘柄`);
+  console.log(`   - NYSE: ${nyseSymbols.length}銘柄`);
+  console.log(`   - NASDAQ: ${nasdaqSymbols.length}銘柄`);
+  console.log(`   - Russell 1000: ${russell1000Symbols.length}銘柄`);
+
+  // アルファベット順にソート
+  filtered.sort((a, b) => a.symbol.localeCompare(b.symbol));
+
+  return filtered;
 }
 
 /**
