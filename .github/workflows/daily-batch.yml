@@ -1,0 +1,95 @@
+name: Daily Stock Data Batch Processing
+
+on:
+  # 毎日 UTC 2:00 (JST 11:00) に実行
+  schedule:
+    - cron: '0 2 * * *'
+
+  # 手動実行も可能
+  workflow_dispatch:
+
+jobs:
+  batch-process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300 # 5時間のタイムアウト
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Display batch start time
+        run: |
+          echo "🚀 バッチ処理開始"
+          echo "開始時刻: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "JST換算: $(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S JST')"
+
+      - name: Call batch processing API
+        env:
+          VERCEL_URL: ${{ secrets.VERCEL_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          echo "📊 全銘柄バッチ処理を開始します..."
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "https://$VERCEL_URL/api/batch-all")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response Body:"
+          echo "$BODY" | jq '.' || echo "$BODY"
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "❌ バッチ処理が失敗しました (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+
+          # 成功/失敗カウントを抽出
+          SUCCEEDED=$(echo "$BODY" | jq -r '.results.succeeded // 0')
+          FAILED=$(echo "$BODY" | jq -r '.results.failed // 0')
+          TOTAL=$(echo "$BODY" | jq -r '.results.total // 0')
+          DURATION=$(echo "$BODY" | jq -r '.duration_seconds // 0')
+
+          echo ""
+          echo "✅ バッチ処理完了"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📈 処理結果サマリー:"
+          echo "  • 対象銘柄数: $TOTAL"
+          echo "  • 成功: $SUCCEEDED"
+          echo "  • 失敗: $FAILED"
+          echo "  • 処理時間: ${DURATION}秒 ($(($DURATION / 60))分)"
+          echo "  • 成功率: $(echo "scale=1; $SUCCEEDED * 100 / $TOTAL" | bc)%"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # エラーがある場合は詳細を表示
+          if [ "$FAILED" -gt 0 ]; then
+            echo ""
+            echo "⚠️  エラー詳細:"
+            echo "$BODY" | jq -r '.results.errors[] | "  • \(.symbol): \(.error)"'
+            echo ""
+            echo "注: 一部銘柄でエラーが発生しましたが、処理は継続されました"
+          fi
+
+      - name: Display completion time
+        if: always()
+        run: |
+          echo ""
+          echo "🏁 ワークフロー完了"
+          echo "完了時刻: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "JST換算: $(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S JST')"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ バッチ処理が失敗しました"
+          echo "詳細はGitHub Actionsのログを確認してください"
+          echo "URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

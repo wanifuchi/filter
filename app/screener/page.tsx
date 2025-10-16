@@ -34,6 +34,11 @@ export default function ScreenerPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
+  // バッチ処理済みデータ用state
+  const [batchStocks, setBatchStocks] = useState<StockWithIndicators[]>([]);
+  const [isBatchLoading, setIsBatchLoading] = useState(false);
+  const [batchError, setBatchError] = useState<string | null>(null);
+
   const handlePresetSelect = (preset: PresetStrategy) => {
     setSelectedPreset(preset);
   };
@@ -105,6 +110,45 @@ export default function ScreenerPage() {
     await handleSearch(symbol);
   };
 
+  // バッチ処理済みデータ取得ハンドラー
+  const handleLoadBatchData = async (params?: {
+    minScore?: number;
+    decision?: string;
+    limit?: number;
+  }) => {
+    setIsBatchLoading(true);
+    setBatchError(null);
+
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.minScore !== undefined) {
+        queryParams.append('min_score', params.minScore.toString());
+      }
+      if (params?.decision) {
+        queryParams.append('decision', params.decision);
+      }
+      if (params?.limit) {
+        queryParams.append('limit', params.limit.toString());
+      }
+
+      const url = `/api/stocks${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setBatchStocks(data.data || []);
+    } catch (err) {
+      setBatchError(err instanceof Error ? err.message : "データ取得に失敗しました");
+      console.error("Batch data loading error:", err);
+    } finally {
+      setIsBatchLoading(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6">
       <header className="mb-8">
@@ -126,8 +170,9 @@ export default function ScreenerPage() {
       </header>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-8">
+        <TabsList className="grid w-full grid-cols-3 mb-8">
           <TabsTrigger value="search">個別銘柄検索</TabsTrigger>
+          <TabsTrigger value="batch">バッチ処理済みデータ</TabsTrigger>
           <TabsTrigger value="screening">プリセットスクリーニング</TabsTrigger>
         </TabsList>
 
@@ -176,6 +221,82 @@ export default function ScreenerPage() {
                       symbol={searchedStock.symbol}
                     />
                   )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* バッチ処理済みデータタブ */}
+        <TabsContent value="batch" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>バッチ処理済みデータ</CardTitle>
+              <CardDescription>
+                Supabaseに保存された全銘柄のバッチ処理済みデータを表示します
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  onClick={() => handleLoadBatchData({ limit: 100 })}
+                  disabled={isBatchLoading}
+                >
+                  最新100件を読み込み
+                </Button>
+                <Button
+                  onClick={() => handleLoadBatchData({ minScore: 90, limit: 100 })}
+                  disabled={isBatchLoading}
+                  variant="outline"
+                >
+                  AIスコア90以上
+                </Button>
+                <Button
+                  onClick={() => handleLoadBatchData({ decision: 'BUY', limit: 100 })}
+                  disabled={isBatchLoading}
+                  variant="outline"
+                >
+                  BUY判定のみ
+                </Button>
+                <Button
+                  onClick={() => handleLoadBatchData({ decision: 'STRONG_BUY', limit: 100 })}
+                  disabled={isBatchLoading}
+                  variant="outline"
+                >
+                  STRONG_BUY判定のみ
+                </Button>
+              </div>
+
+              {batchError && (
+                <div className="bg-destructive/10 text-destructive p-4 rounded-lg">
+                  エラー: {batchError}
+                </div>
+              )}
+
+              {isBatchLoading && (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-4 text-muted-foreground">データ取得中...</p>
+                </div>
+              )}
+
+              {batchStocks.length > 0 && !isBatchLoading && (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                    <p className="text-sm text-blue-900 dark:text-blue-100">
+                      <span className="font-semibold">{batchStocks.length}件</span>のデータを表示中
+                    </p>
+                  </div>
+                  <StockDataTable
+                    stocks={batchStocks}
+                    onSymbolClick={handleSymbolClick}
+                  />
+                </div>
+              )}
+
+              {batchStocks.length === 0 && !isBatchLoading && !batchError && (
+                <div className="text-center py-12 text-muted-foreground">
+                  上のボタンをクリックしてデータを読み込んでください
                 </div>
               )}
             </CardContent>
