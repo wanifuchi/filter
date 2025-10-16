@@ -172,8 +172,7 @@ export async function POST(request: NextRequest) {
       jobId,
       status,
       results.succeeded,
-      results.failed,
-      `処理時間: ${duration}秒`
+      results.failed
     );
 
     console.log(`[BATCH-ALL] 完了: 成功 ${results.succeeded}/${results.total}, 失敗 ${results.failed}`);
