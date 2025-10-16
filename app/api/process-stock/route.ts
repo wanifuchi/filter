@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     // 3. Yahoo Financeから株価データ取得
     const quote = await yahooFinance.quote(symbol);
 
-    if (!quote || !quote.regularMarketPrice) {
+    if (!quote || !(quote as any).regularMarketPrice) {
       throw new Error('株価データが取得できませんでした');
     }
 
@@ -91,8 +91,8 @@ export async function POST(request: NextRequest) {
 
     const perfectOrderBullish = checkPerfectOrder([ma10, ma20, ma50, ma200]);
 
-    const currentPrice = quote.regularMarketPrice;
-    const currentVolume = quote.regularMarketVolume || volumes[volumes.length - 1];
+    const currentPrice = (quote as any).regularMarketPrice;
+    const currentVolume = (quote as any).regularMarketVolume || volumes[volumes.length - 1];
     const dollarVolume = currentPrice * currentVolume;
 
     // 6. 投資判断を計算
@@ -130,12 +130,12 @@ export async function POST(request: NextRequest) {
         symbol,
         date: today,
         current_price: currentPrice,
-        open_price: quote.regularMarketOpen,
-        high_price: quote.regularMarketDayHigh,
-        low_price: quote.regularMarketDayLow,
+        open_price: (quote as any).regularMarketOpen,
+        high_price: (quote as any).regularMarketDayHigh,
+        low_price: (quote as any).regularMarketDayLow,
         volume: currentVolume,
         dollar_volume: dollarVolume,
-        market_cap: quote.marketCap || null,
+        market_cap: (quote as any).marketCap || null,
         ma_10: ma10,
         ma_20: ma20,
         ma_50: ma50,
