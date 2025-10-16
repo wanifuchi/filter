@@ -39,6 +39,34 @@ CREATE TABLE IF NOT EXISTS stocks (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
+-- カラム追加: 既存テーブルに不足しているカラムを追加
+DO $$
+BEGIN
+  -- is_active カラムが存在しない場合は追加
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'stocks' AND column_name = 'is_active'
+  ) THEN
+    ALTER TABLE stocks ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
+  END IF;
+
+  -- country カラムが存在しない場合は追加
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'stocks' AND column_name = 'country'
+  ) THEN
+    ALTER TABLE stocks ADD COLUMN country VARCHAR(2) DEFAULT 'US';
+  END IF;
+
+  -- industry カラムが存在しない場合は追加
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'stocks' AND column_name = 'industry'
+  ) THEN
+    ALTER TABLE stocks ADD COLUMN industry VARCHAR(100);
+  END IF;
+END $$;
+
 -- インデックス: 検索パフォーマンス向上
 DO $$
 BEGIN
@@ -99,6 +127,26 @@ CREATE TABLE IF NOT EXISTS stock_data (
   -- ユニーク制約: 1銘柄 × 1日付 = 1レコード
   UNIQUE(symbol, date)
 );
+
+-- カラム追加: 既存テーブルに不足しているカラムを追加
+DO $$
+BEGIN
+  -- market_cap カラムが存在しない場合は追加
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'stock_data' AND column_name = 'market_cap'
+  ) THEN
+    ALTER TABLE stock_data ADD COLUMN market_cap BIGINT;
+  END IF;
+
+  -- created_at カラムが存在しない場合は追加
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'stock_data' AND column_name = 'created_at'
+  ) THEN
+    ALTER TABLE stock_data ADD COLUMN created_at TIMESTAMP DEFAULT NOW();
+  END IF;
+END $$;
 
 -- インデックス: フィルター機能の高速化
 DO $$
